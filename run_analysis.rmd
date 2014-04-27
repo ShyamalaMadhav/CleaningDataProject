@@ -1,0 +1,118 @@
+Title- Getting and Cleaning Data Project
+========================================================
+
+This is an R Markdown document. 
+
+Download all Required files and Set working directory to 
+"..\getdata-projectfiles-UCI HAR" Dataset
+
+Read table activity_labels.txt
+```{r}
+ActivityLabels<-read.table("UCI HAR Dataset/activity_labels.txt")
+```
+head(ActivityLabels)
+
+Read Table features.txt
+```{r}
+Features<-read.table("UCI HAR Dataset/features.txt")
+```
+head(Features)
+Read Tables "subject_test.txt","X_test.txt","y_test.txt"
+```{r}
+subject_test<-read.table("UCI HAR Dataset/test/subject_test.txt")
+X_test<-read.table("UCI HAR Dataset/test/X_test.txt")
+y_test<-read.table("UCI HAR Dataset/test/y_test.txt")
+```
+
+Some Verification steps
+head(y_test,10)
+dim(y_test)
+dim(X_test)
+dim(subject_test)
+dim(Features)
+
+Appending Activity & Subject to a single file for the Test data and adding Column names
+```{r}
+Act_Sub_test<-cbind(y_test,subject_test)
+colnames(Act_Sub_test)<-c("Activity","Subject")
+```
+
+dim(Act_Sub_test)
+
+Read Tables "subject_train.txt","X_train.txt","y_train.txt"
+```{r}
+subject_train<-read.table("UCI HAR Dataset/train/subject_train.txt")
+X_train<-read.table("UCI HAR Dataset/train/X_train.txt")
+y_train<-read.table("UCI HAR Dataset/train/y_train.txt")
+```
+
+dim(X_train)
+dim(subject_train)
+dim(ActivityLabels)
+
+Appending Activity & Subject to a single file for the Test data and adding Column names
+```{r}
+Act_Sub_train<-cbind(y_train,subject_train)
+colnames(Act_Sub_train)<-c("Activity","Subject")
+```
+dim(Act_Sub_train)
+names(Act_Sub_train)
+
+Merging Training and Test set Activity and Subject Data to a dataframe called z
+```{r}
+z<-merge(Act_Sub_train,Act_Sub_test,all=TRUE)
+```
+Merging Training and Test set data to a dataframe called Merged_train_Test
+and Adding Column names from the dataframe Features.
+```{r}
+Merged_train_Test<-merge(X_train,X_test,all=TRUE)
+colnames(Merged_train_Test)<-Features[,2]
+```
+dim(Merged_train_Test)
+
+Find columns with "mean()"" and "std()" and create a new dataframe with just the required columns
+```{r}
+matches <- grep(paste(c("mean\\(\\)", "std\\(\\)"),collapse="|"),names(Merged_train_Test), value=TRUE)
+Required_Data<-Merged_train_Test[,matches]
+```
+names(Required_Data)
+
+Column Bind the Activity Number and Subject Id to the Required Data
+```{r}
+Complete_Data<-cbind(z,Required_Data)
+```
+
+dim(Complete_Data)
+head(Complete_Data[,1:10],2)
+```{r}
+g <- split(Complete_Data[,3:68], list(Complete_Data$Activity, Complete_Data$Subject))
+Splitdata <- t(sapply(g, colMeans))
+```
+
+dim(Splitdata)
+head(Splitdata[,1:10],2)
+```{r}
+d1<-data.frame(Activity=rep(1:6,each=30),Subject=rep(1:30,6))
+FinalData<-cbind(d1,Splitdata)
+row.names(FinalData)<-NULL
+
+```
+dim(FinalData)
+View(FinalData)
+
+```{r}
+FinalData$Activity[FinalData$Activity==1] <- "WALKING"
+FinalData$Activity[FinalData$Activity==2] <- "WALKING_UPSTAIRS"
+FinalData$Activity[FinalData$Activity==3] <- "WALKING_DOWNSTAIRS"
+FinalData$Activity[FinalData$Activity==4] <- "SITTING"
+FinalData$Activity[FinalData$Activity==5] <- "STANDING"
+FinalData$Activity[FinalData$Activity==6] <- "LAYING"
+```
+View(FinalData)
+write.csv(FinalData,file="UCI HAR Dataset/FinalData.csv")
+write.table(FinalData,file="UCI HAR Dataset/FinalData.txt")
+
+```{r}
+head(FinalData[,1:10],40)
+
+```
